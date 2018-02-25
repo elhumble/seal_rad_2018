@@ -1,7 +1,7 @@
 # Antarctic fur seal RAD sequencing and population genomics 
 
-`snp_discovery_pipeline_PILONGENOME_Nov2017.txt` : documented workflow for SNP discovery  
-`alignment_notes_Nov2017.txt` : documented  workflow for the genome alignment  
+`snp_discovery_pipeline_PILONGENOME_Nov2017.sh` : documented workflow for SNP discovery  
+`alignment_notes_Nov2017.sh` : documented  workflow for the genome alignment  
 `R` scripts contain the code for the main analysis workflow  
 
 `/R` contains some R functions used in the pipeline  
