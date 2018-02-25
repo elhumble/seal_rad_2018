@@ -22,7 +22,7 @@ bwa index submission.assembly.ArcGaz001_AP3.GapClosed.ArcGaz.paired.PBJelly2.utg
 
 #~~~~~
 
-1. BWA MEM
+# 1. BWA MEM
 
 find ./ -name ‘*.fq’
 
@@ -34,7 +34,7 @@ nohup find ./ -name '*.fq' | grep -v .2.fq | sed 's/.1.fq.fq//' | parallel bwa m
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
-1. Remove unmapped reads:
+# 1. Remove unmapped reads:
 
 nohup sh -c 'for i in sample*_A*.sam; do samtools view -bF 4 $i > ${i%.sam}_filtered.sam; done' &
 nohup sh -c 'for i in sample*_T*.sam; do samtools view -bF 4 $i > ${i%.sam}_filtered.sam; done' &
@@ -45,7 +45,7 @@ nohup sh -c 'for i in sample*_C*.sam; do samtools view -bF 4 $i > ${i%.sam}_filt
 
 # PICARD TOOLS
 
-2. Run SortSam.jar: # sorts sam files by coordinate and makes a bam file
+#2. Run SortSam.jar: sorts sam files by coordinate and makes a bam file
 # where is SortSam.jar? /home/emily/programs/ it is executable
 
 nohup sh -c 'for i in *lib1_*filtered.sam; do java -Xmx8g -jar /usr/local/bin/picard.jar SortSam I=$i O=${i%_filtered.sam}_filtered_sorted.bam SORT_ORDER=coordinate; done' &
@@ -112,7 +112,7 @@ samtools view -H sample_lib1.1_TGCATCGT_filtered_sorted.RG.bam | grep '@RG'
 
 #~~~~~~~
 
-3. Remove PCR Duplicates
+# 3. Remove PCR Duplicates
 
 
 nohup sh -c 'for i in sample_*_G*.RG.bam; do java -Xmx8g -jar /usr/local/bin/picard.jar MarkDuplicates REMOVE_DUPLICATES=true ASSUME_SORTED=true VALIDATION_STRINGENCY=SILENT INPUT=$i OUTPUT=${i%bam}rmdup.bam METRICS_FILE=${i%bam}rmdupmetrics READ_NAME_REGEX=null MAX_RECORDS_IN_RAM=500000000 MAX_FILE_HANDLES_FOR_READ_ENDS_MAP=800 > ${i%bam}rmduplog 2>&1; done' &
@@ -130,7 +130,7 @@ nohup sh -c 'for i in sample_*_C*.RG.bam; do java -Xmx8g -jar /usr/local/bin/pic
 
 #~~~~~~~
 
-4. Merge individual bam files
+# 4. Merge individual bam files
 
 # first move all the current files into a directory
 
@@ -204,14 +204,14 @@ ls | wc -l
 
 
 # Prepare reference folder
-1) Need 3 reference files:
+# 1) Need 3 reference files:
 
-a) fasta file(s) used in BWA
-b) indexed fasta: reference.fasta.fai: run this samtools code:
+# a) fasta file(s) used in BWA
+# b) indexed fasta: reference.fasta.fai: run this samtools code:
 
 samtools faidx ../../../reference/submission.assembly.ArcGaz001_AP3.GapClosed.ArcGaz.paired.PBJelly2.utg000001c.utg.quiver.nopipe.pilon.fa
 
-c) reference.dict: run this picardtools code:
+# c) reference.dict: run this picardtools code:
 
 java -Xmx8g -jar /usr/local/bin/picard.jar CreateSequenceDictionary R= submission.assembly.ArcGaz001_AP3.GapClosed.ArcGaz.paired.PBJelly2.utg000001c.utg.quiver.nopipe.pilon.fa O= submission.assembly.ArcGaz001_AP3.GapClosed.ArcGaz.paired.PBJelly2.utg000001c.utg.quiver.nopipe.pilon.dict
 
@@ -295,7 +295,7 @@ nohup java -Djava.io.tmpdir=./Temp/ -Xmx64g -jar /usr/local/bin/GenomeAnalysisTK
 
 gzip -d ArcGaz_genotype_gvcf.vcf.gz
 
-All SNP filtering in /home/emily/SNP_filtering directory in Rproject SNP_filtering.Rproj
+# All SNP filtering in /home/emily/SNP_filtering directory in Rproject SNP_filtering.Rproj
 
 
 # END

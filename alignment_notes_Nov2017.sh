@@ -11,7 +11,7 @@
 # (1) Download CanFam3.1 genome
 # CanFam downloaded onto server into:
 
-/assemblies/CanFam3.1/
+# /assemblies/CanFam3.1/
 
 # (2) Run LAST alignment
 # See the following for support:
