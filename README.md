@@ -1,4 +1,5 @@
 # Antarctic fur seal RAD sequencing and population genomics 
+# 2018
 
 `snp_discovery_pipeline_PILONGENOME_Nov2017.sh` : documented workflow for SNP discovery  
 `alignment_notes_Nov2017.sh` : documented  workflow for the genome alignment  
