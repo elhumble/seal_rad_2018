@@ -1,5 +1,6 @@
 # Quantifying inbreeding
-# sMLH, IBCS, g2
+# Filter in a variety of ways and visualise inbreeding ~ missingness
+# sMLH, IBCS, relatedness (IBD)
 
 library(dplyr)
 library(tidyr)
@@ -19,6 +20,7 @@ system("mkdir data/inbreeding")
 system("vcftools --vcf data/ArcGaz_pilon_biallelic_sub_maf.recode.vcf --out data/inbreeding/maf05_g60 --maf 0.05 --max-missing 0.60 --recode --recode-INFO-all")
 system("vcftools --vcf data/inbreeding/maf05_g60.recode.vcf --plink --out data/inbreeding/maf05_g60")
 system("plink --file data/inbreeding/maf05_g60 --make-bed --recodeAD --out data/inbreeding/maf05_g60")
+system("plink --file data/inbreeding/maf05_g60 --make-bed --recodeA --out data/inbreeding/Agazella_genotypes2") # wildlifedetectR
 
 
 #~~ Filter raw vcf file
@@ -125,6 +127,7 @@ system("vcftools --vcf data/inbreeding/maf05_g60_ldi_ME_SSB.recode.vcf --max-mis
 system("vcftools --vcf data/inbreeding/maf05_g90_ldi_ME_SSB.recode.vcf --plink --out data/inbreeding/maf05_g90_ldi_ME_SSB")
 system("plink --file data/inbreeding/maf05_g90_ldi_ME_SSB --make-bed --recodeAD --out data/inbreeding/maf05_g90_ldi_ME_SSB")
 
+# for this dataset, 30 % is necessary to keep a high number of SNPs
 system("vcftools --vcf data/inbreeding/GQ_DP_ldi_ME_SSB.recode.vcf --max-missing 0.7 --maf 0.05 --recode --recode-INFO-all --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB")
 system("bcftools query -l data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB.recode.vcf | wc -l ")
 
@@ -166,6 +169,9 @@ system("wc -l data/inbreeding/maf05_g90_ldi_ME_SSB_hwe.prune.in")
 system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --indep 50 5 2 --nonfounders --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --allow-extra-chr --debug")
 system("wc -l data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.prune.in")
 
+# Run PLINK --indep
+#system("plink --bfile data/inbreeding/relatedness --indep 50 5 2 --nonfounders --out data/inbreeding/relatedness --allow-extra-chr --debug")
+#system("wc -l data/inbreeding/relatedness.prune.in")
 
 # LD filter
 # Make plink raw file
@@ -178,6 +184,8 @@ system("plink --bfile data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --extract data/in
 system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --extract data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.prune.in --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD --recodeAD --allow-extra-chr --debug")
 # Make standard plink files
 system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --extract data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.prune.in --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD --make-bed --recode --allow-extra-chr --debug")
+# Make file for wildlife detectR
+system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --extract data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.prune.in --out data/inbreeding/Agazella_genotypes --make-bed --recodeA --allow-extra-chr --debug")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -194,7 +202,7 @@ get_sMLH_from_plinkraw <- function(file) {
   row.names(x) <- ids
   NAs <- apply(x, 1, function(x) sum(is.na(x)))
   
-  sMLH <- as.data.frame(MLH(x))
+  sMLH <- as.data.frame(sMLH(x))
   sMLH$ANIMAL <- ids
   sMLH$NAS <- NAs
   sMLH <- dplyr::filter(sMLH, grepl("^AG", ANIMAL))
@@ -221,7 +229,7 @@ rownames(ms) <- ms$ID
 ms <- dplyr::select(ms, -Run, -ID, -sMLH, -NAs)
 
 raw_ms <- convert_raw(ms)
-ms_sMLH <- data.frame(MLH(raw_ms))
+ms_sMLH <- data.frame(sMLH(raw_ms))
 ms_sMLH$IID <- IDs
 colnames(ms_sMLH) <- c("ms_sMLH", "IID")
 
@@ -254,11 +262,12 @@ get_g2_from_plinkraw <- function(file) {
 }
 
 g2 <- lapply(raw_files[c(1,5)], get_g2_from_plinkraw)
+g2 <- lapply(raw_files[1], get_g2_from_plinkraw)
 g2 <- g2[[1]]
 plot(g2, col = "grey")
 g2
 var(filter(sMLH, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH)
-
+g2$g2
 
 
 #~~ Get Fhats
@@ -301,6 +310,11 @@ names(fhats) <- lapply(ibc_files[c(1,4)], function(x) gsub("data/inbreeding/|\\.
 ibcs <- rbindlist(fhats, idcol = "Run") %>%
   left_join(sMLH, by = c("IID", "Run")) %>%
   left_join(ms_sMLH, by  = "IID")
+
+png("figs/ms_vs_rad.png")
+ggplot(ibcs, aes(x = ms_sMLH, y = sMLH)) + 
+  geom_point(colour = "grey45")
+dev.off()
 
 # ~~ Plot g2
 
@@ -496,8 +510,8 @@ plot8 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fh
   ggtitle('(D)') + theme(plot.title=element_text(hjust=0, size = 18, face = "plain"))
 
 
-scaleFUN <- function(x) sprintf("%.2f", x)
-labels3 = data.frame(x = 0.12, y = 0.31, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH, 
+scaleFUN <- function(x) sprintf("%.1f", x)
+labels3 = data.frame(x = 0.12, y = 1.15, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH, 
                                                          filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3))
 plot9 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, y = sMLH)) +
   geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
@@ -568,4 +582,446 @@ dev.off()
 jpeg("figs/inbreeding_fig.jpg", units = "in", res = 300, width = 14, height = 10) # 22, 6
 grid.arrange(g2_dist_panel, corr_plots, nrow = 2)
 dev.off()
+
+#~~~~~~~~~~~~~~~~~~~~~~#
+#    NA bias plots     #
+#~~~~~~~~~~~~~~~~~~~~~~#
+library(sitools)
+
+# Plots for presentations and Supplementary
+# Presentation colour = #3262AB
+
+plot1 <- ggplot(filter(ibcs, Run == "maf05_g90_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, color=.id, fill=.id), col = "grey33") +
+  geom_histogram(aes(y=..density..),  position="identity", alpha=0.9, col = "grey33", fill = "grey33") +
+  geom_density(alpha=0.6, col = "grey33", fill = "grey33") +
+  labs(y = "Density", x = expression(italic(hat(F)["III"]))) +
+  xlim(c(-0.5,0.5)) +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain"))
+# axis.title = element_text(color = "black"))
+
+plot2 <- ggplot(filter(ibcs, Run == "maf05_g90_ldi_ME_SSB_hwe_LD"), aes(factor(Animal), Fhat1)) + 
+  geom_violin(aes(fill = factor(Animal))) +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain"))
+
+plot3 <- ggplot(filter(ibcs, Run == "maf05_g90_ldi_ME_SSB_hwe_LD"), aes(x=NOMISS, y = Fhat3)) +
+  geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
+  labs(x = "SNPs Genotyped", y = expression(italic(hat(F)["III"]))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  scale_x_continuous(labels = f2si) +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain"))
+
+# Depth filtered 
+library(scales)
+
+plot4 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, color=.id, fill=.id), col = "grey33") +
+  geom_histogram(aes(y=..density..),  position="identity", alpha=0.9, col = "grey33", fill = "grey33") +
+  geom_density(alpha=0.6, col = "grey33", fill = "grey33") + #3262AB
+  labs(y = "Density", x = expression(italic(hat(F)["III"]))) +
+  #xlim(c(-0.5,0.5)) +
+  xlim(c(-0.3,0.3)) +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain")) +
+  ggtitle('A') + theme(plot.title=element_text(hjust=0, size = 12))
+
+plot5 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(factor(Animal), Fhat3)) + 
+  geom_violin(aes(fill = factor(Animal))) +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain"))
+
+plot6 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=NOMISS, y = Fhat3)) +
+  geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
+  labs(x = "SNPs Genotyped", y = expression(italic(hat(F)["III"]))) +
+  theme(axis.text.x=element_text(angle=45, hjust=1)) +
+  scale_x_continuous(labels = f2si) +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain"))
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#       GL inbreeding values        # 
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+
+
+
+
+
+
+#~~ Change in inbreeding through time
+
+
+cbPalette <- c("grey33", "#EB9050")
+
+test <- filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD") %>%
+  mutate(Year = substr(IID, 4, 5)) %>%
+  mutate(Year_pre = case_when(grepl("^0", .$Year) ~ "20",
+                              grepl("^9", .$Year) ~ "19")) %>%
+  unite("YEAR", c("Year_pre", "Year"), sep = "") %>%
+  mutate(YEAR = as.numeric(YEAR))
+
+
+
+png("figs/ibc_time.png", units = "in", res = 300, width = 11, height = 8)
+
+ggplot(test, aes(YEAR, Fhat3, col = Animal)) +
+  geom_point(aes(colour = factor(Animal)), size = 6, alpha = 0.6) +
+  #geom_smooth(method = "lm", se = FALSE, col = "grey33") +
+  #  geom_smooth(method = "lm", se = FALSE, col = "grey33", size = 2) +
+  geom_smooth(method = "lm", se = FALSE, size = 2) +
+  # geom_smooth(span = 1, colour = "grey30", fill = "grey") +
+  # geom_smooth(span = 1) +
+  scale_colour_manual(values = cbPalette,
+                      name = "Age") +
+  labs(y = expression(italic(hat(F)["III"])), x = "Birth Year") +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain")) 
+
+dev.off()
+
+
+# Average level of inbreeding per year
+mean_year <- test %>%
+  dplyr::group_by(YEAR) %>%
+  dplyr::summarise(mean = mean(Fhat3),
+                   CI_lower = stats::quantile(Fhat3, c((1-CI)/2,1-(1-CI)/2), na.rm=TRUE)[[1]],
+                   CI_upper = stats::quantile(Fhat3, c((1-CI)/2,1-(1-CI)/2), na.rm=TRUE)[[2]])
+
+
+ggplot(mean_year, aes(YEAR, mean)) +
+  geom_point(size = 3) +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_colour_manual(values = cbPalette,
+                      name = "Age") +
+  geom_ribbon(data=mean_year,aes(ymin=CI_lower,ymax=CI_upper),alpha=0.3) +
+  labs(y = expression(italic(hat(F)["III"])), x = "Year") +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain")) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1))
+
+
+
+
+# Analysis
+
+gm1 <- glm(mean ~ YEAR, data = mean_year)
+gm0 <- glm(mean ~ 1, data = mean_year)
+anova(gm0, gm1)
+AIC(gm0, gm1)
+coef(gm1)
+
+# investigate residual correlations
+acf(resid(gm1), main = "Residuals of linear model")
+
+layout(matrix(1:4, ncol = 2))
+plot(gm1)
+layout(1)
+
+library(nlme)
+
+gg0 <- gls(mean ~ 1, data = mean_year, method = "ML")
+gg1 <- gls(mean ~ YEAR, data = mean_year, method = "ML")
+anova(gg0, gg1)
+
+
+gg1 <- update(gg1, method = "REML")
+gg2 <- gls(mean ~ YEAR, data = mean_year,
+           correlation = corARMA(form = ~ YEAR, p = 1), method = "REML")
+gg3 <- gls(mean ~ YEAR, data = mean_year,
+           correlation = corARMA(form = ~ YEAR, p = 2), method = "REML")
+
+anova(gg1, gg2, gg3)
+confint(gg1)
+
+# Visualise vitted trend
+pred <- data.frame(YEAR = 1994:2003)
+pred <- transform(pred, yhat = predict(gg1, newdata = pred))
+with(pred, yhat)
+
+# Plot
+
+ggplot(mean_year, aes(YEAR, mean)) +
+  geom_point(size = 3) +
+  # geom_smooth(method = "lm", se = FALSE) +
+  geom_line(data = pred, 
+            aes(x = YEAR, y = yhat), size = 1.5) +
+  geom_line(data = pred, 
+            aes(x = YEAR, y = yhat), size = 1.5, col  = "red") +
+  scale_colour_manual(values = cbPalette,
+                      name = "Age") +
+  labs(y = expression(italic(hat(F)["III"])), x = "Year") +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain")) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1))
+
+# Heritability of heterozygosity
+
+head(ibcs)
+
+pedigree <- read.table("data/raw/new_pedigree.txt", header = T) %>%
+  filter(grepl("^AGP", ANIMAL))
+
+mother_ibcs <- filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_LD") %>%
+  filter(grepl("^AGF", IID))
+
+father_ibcs <- filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_LD") %>%
+  filter(grepl("^AGM", IID))
+
+her_het <- filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_LD") %>%
+  left_join(pedigree, by = c("IID" = "ANIMAL")) %>%
+  filter(grepl("^AGP", IID)) %>%
+  left_join(mother_ibcs,by = c("MOTHER" = "IID")) %>%
+  left_join(father_ibcs, by = c("FATHER" = "IID")) %>%
+  select(IID, Fhat3.x, sMLH.x, MOTHER, Fhat3.y, sMLH.y, FATHER, Fhat3, sMLH)
+
+colnames(her_het) <- c("PUP", "PUP_Fhat3", "PUP_sMLH", 
+                       "MOTHER", "MOTHER_Fhat3", "MOTHER_sMLH",
+                       "FATHER", "FATHER_Fhat3", "FATHER_sMLH")
+
+her_het$MID_Fhat3 <- rowMeans(her_het[,c("MOTHER_Fhat3", "FATHER_Fhat3")], na.rm=TRUE)
+her_het$MID_sMLH <- rowMeans(her_het[,c("MOTHER_sMLH", "FATHER_sMLH")], na.rm=TRUE)
+
+library(stringr)
+
+df <- her_het %>%
+  mutate(Year = substr(PUP, 4, 5)) %>%
+  mutate(Year_pre = case_when(grepl("^0", .$Year) ~ "20",
+                              grepl("^9", .$Year) ~ "19")) %>%
+  unite("YEAR", c("Year_pre", "Year"), sep = "") %>%
+  mutate(YEAR = as.numeric(YEAR))
+
+
+plot(df$MOTHER_Fhat3 ~ df$YEAR) +
+  abline(lm(df$MOTHER_Fhat3 ~ df$YEAR))
+plot(df$FATHER_Fhat3 ~ df$YEAR) +
+  abline(lm(df$FATHER_Fhat3 ~ df$YEAR))
+plot(df$MOTHER_sMLH ~ df$YEAR) +
+  abline(lm(df$MOTHER_sMLH ~ df$YEAR))
+plot(df$FATHER_sMLH ~ df$YEAR) +
+  abline(lm(df$FATHER_sMLH ~ df$YEAR))
+
+plot(her_het$PUP_Fhat3 ~ her_het$MOTHER_Fhat3)
+plot(her_het$PUP_Fhat3 ~ her_het$FATHER_Fhat3)
+plot(her_het$PUP_sMLH ~ her_het$MOTHER_sMLH)
+plot(her_het$PUP_sMLH ~ her_het$FATHER_sMLH)
+
+plot(her_het$PUP_Fhat3 ~ her_het$MID_Fhat3) +
+  abline(lm(her_het$PUP_Fhat3 ~ her_het$MID_Fhat3))
+
+plot(her_het$PUP_sMLH ~ her_het$MID_sMLH) +
+  abline(lm(her_het$PUP_sMLH ~ her_het$MID_sMLH))
+
+
+
+
+
+
+
+# Method 2
+
+
+
+
+
+
+mean_year_all <- test %>%
+  group_by(YEAR) %>%
+  summarise(mean = mean(Fhat3))
+
+ggplot(mean_year_all, aes(YEAR, mean)) +
+  geom_point(size = 3) +
+  #geom_line() +
+  geom_smooth(method = "lm", se = FALSE) +
+  scale_colour_manual(values = cbPalette,
+                      name = "Age") +
+  labs(y = expression(italic(hat(F)["III"])), x = "Year") +
+  theme(axis.text.x = element_text(face = "plain"),
+        axis.text.y = element_text(face = "plain")) +
+  theme(axis.text.x = element_text(angle = 70, hjust = 1))
+
+#~~ Time series analysis
+
+summary(lm(test$Fhat3 ~ test$YEAR))
+
+install.packages("Kendall")
+library(Kendall)
+MannKendall(test$Fhat3)
+MannKendall(filter(test, Animal == "Pup")$Fhat3)
+MannKendall(filter(test, Animal == "Adult")$Fhat3)
+MannKendall(filter(mean_year, Animal == "Adult")$mean)
+
+library(pastecs)
+trend.test(mean_year_all$mean, R=1)
+MannKendall(mean_year_all$mean)
+mkTrend(mean_year_all$mean)
+
+mean_year_pup <- test %>%
+  group_by(YEAR) %>%
+  filter(Animal == "Pup") %>%
+  summarise(mean = mean(Fhat3))
+
+acf(mean_year_pup$mean)
+
+MannKendall(mean_year_pup$mean)
+MannKendall(mean_year_pup$mean)
+mkTrend(mean_year_pup$mean)
+
+library(boot)
+MKtau<-function(z) MannKendall(z)$tau
+tsboot(mean_year_pup$mean, MKtau, R=500, l=5, sim="fixed")
+
+
+mean_year_adult <- test %>%
+  group_by(YEAR) %>%
+  filter(Animal == "Adult") %>%
+  summarise(mean = mean(Fhat3))
+
+MannKendall(mean_year_adult$mean)
+mkTrend(mean_year_adult$mean)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#~~ Other plots
+
+# Melt ibcs
+
+ibcs_melt <- melt(ibcs, id = c("Run", "FID", "IID",
+                               "Animal"))
+
+unique(ibcs_melt$Run)
+
+# Subset runs
+
+df <- ibcs %>%
+  filter(Run == "GQ_DP_maf05_G_ldi_ME_LD" | Run == "GQ_DP_maf05_G_ldi_ME" | 
+           Run == "maf05_g90_ldi_ME_LD" | Run == "maf05_g60")
+
+
+# violin
+ggplot(fhats, aes(factor(Animal), Fhat1)) + 
+  geom_violin(aes(fill = factor(Animal))) +
+  facet_grid(. ~ .id)
+
+#dens
+ggplot(df, aes(x=Fhat3, color=Animal, fill=Animal)) +
+  geom_histogram(aes(y=..density..),  position="identity", alpha=0.5) +
+  geom_density(alpha=0.6) +
+  facet_grid(.~ Run)
+
+ggplot(filter(fhats, .id == "GQ_DP_maf05_g90_ldi_ld.ibc"), aes(x=Fhat3, color=Animal, fill=Animal)) +
+  geom_histogram(aes(y=..density..),  position="identity", alpha=0.5) +
+  geom_density(alpha=0.6)
+
+pairs(filter(fhats, .id == "GQ_DP_maf05_g90_ldi.ibc")[c(4:7)])
+
+# nomiss
+ggplot(fhats, aes(x=NOMISS, y = Fhat1)) +
+  geom_point() +
+  facet_grid(. ~ .id, scales = "free")
+
+
+# Pairs plot
+
+df <- ibcs %>%
+  filter(Run == "GQ_DP_maf05_G_ldi_ME_LD")
+pairs(df[c(5,6,7,9)])
+
+library(GGally)
+ggpairs(df[c(5,6,7,9)])
+
+
+
+
+
+
+#~~ Relatedness
+
+
+system("plink --bfile data/inbreeding/relatedness_ld --genome --out data/inbreeding/relatedness_ld --allow-extra-chr")
+
+ibds <- fread("data/inbreeding/relatedness_ld.genome", header = T)
+
+
+ped <- fread("data/raw/full_pedigree.txt") %>%
+  dplyr::filter(grepl("^AG", V1))
+ped[ped == 0] <- NA
+colnames(ped) <- c("id", "dam", "sire")
+
+#install.packages("pedantics")
+library(pedantics)
+library(reshape2)
+
+stats.g<-pedigreeStats(ped, graphicalReport='n', includeA = T)
+
+mat <- stats.g$Amatrix
+
+
+relate <- setNames(melt(mat), c('rows', 'vars', 'values')) %>%
+  dplyr::filter(values != 1)
+colnames(relate) <- c("IID1", "IID2", "R")
+
+# Add pedigree relatedness to SNP relatedness 
+
+test <- dplyr::left_join(ibds, relate, by = c("IID1", "IID2")) %>%
+  filter(grepl("^AG", FID1))
+
+
+library(RColorBrewer)
+cbPalette <- c(brewer.pal(8, "Dark2")[c(1)], brewer.pal(8, "Dark2")[c(2)])
+
+
+ggthemr(palette = "pale", layout = "clean", 
+        line_weight = 0.7, text_size = 20, type = "outer")
+
+
+png("figs/snp_relatedness.png", units = "in", res = 300, width = 10, height = 8)
+
+ggplot(test, aes(x=R, y = PI_HAT)) +
+  geom_point(size = 4, alpha = 0.5, col = "#3262AB") +
+  ylab("SNP based relatedness") +
+  xlab("Pedigree based relatedness")
+
+dev.off()
+
+# FOR EXTRACTING PARENTAL RELATEDNESS TO CORRELATE WITH INBREEDING
+
+# probably very bad code to get mum dad combos
+
+arranged <- test %>%
+  mutate(MOTHER1 = case_when(grepl("AGF", .$IID1) & grepl("AGM", .$IID2) ~ .$IID1),
+         FATHER1 = case_when(grepl("AGF", .$IID1) & grepl("AGM", .$IID2) ~ .$IID2),
+         MOTHER2 = case_when(grepl("AGF", .$IID2) & grepl("AGM", .$IID1) ~ .$IID2),
+         FATHER2 = case_when(grepl("AGF", .$IID2) & grepl("AGM", .$IID1) ~ .$IID1),
+         MOTHER = case_when(is.na(MOTHER1) ~ MOTHER2, is.na(MOTHER2) ~ MOTHER1),
+         FATHER = case_when(is.na(FATHER1) ~ FATHER2, is.na(FATHER2) ~ FATHER1)) %>%
+  dplyr::select(-MOTHER1, -MOTHER2, -FATHER1, -FATHER2) %>%
+  filter(!is.na(MOTHER))
+
+# select triads
+
+triads <- read.table("data/raw/new_pedigree.txt", header = T) %>%
+  filter(grepl("^AG", ANIMAL))
+
+x <- triads %>%
+  left_join(arranged, by = c("MOTHER", "FATHER"))
+
+
+
+
+
+
 
