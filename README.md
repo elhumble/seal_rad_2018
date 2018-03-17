@@ -2,6 +2,8 @@
 
 [Emily Humble](http:/elhumble.github.io/), Kanchon K Dasmahapatra, Alvaro Martinez-Barrio, Ines Gregorio, Jaume Forcada, Ann-Christin Polikeit, Simon D Goldsworthy, Michael E Goebel, Joern Kalinowski, Jochen Wolf and Joseph Hoffman  
 
+This repository contains the main code and data used in the manuscript.
+
 ###### Pre-print available [here](https://doi.org/10.1101/269167)
 
 `snp_discovery_pipeline_PILONGENOME_Nov2017.sh` : documented workflow for SNP discovery  
