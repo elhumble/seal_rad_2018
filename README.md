@@ -1,4 +1,5 @@
-# RAD sequencing and a hybrid Antarctic fur seal genome assembly reveal rapidly decaying linkage disequilibrium, global population structure and evidence for inbreeding
+**RAD sequencing and a hybrid Antarctic fur seal genome assembly reveal rapidly decaying linkage disequilibrium, global population structure and evidence for inbreeding**
+
 [Emily Humble](http:/elhumble.github.io/), Kanchon K Dasmahapatra, Alvaro Martinez-Barrio, Ines Gregorio, Jaume Forcada, Ann-Christin Polikeit, Simon D Goldsworthy, Michael E Goebel, Joern Kalinowski, Jochen Wolf and Joseph Hoffman  
 
 ###### Pre-print available [here](https://doi.org/10.1101/269167)
