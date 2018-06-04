@@ -6,13 +6,139 @@
 # Two rounds of sequencing from CEBITEC (same libraries)
 #~~~~~
 
-# Working in directory with raw RAD sequencing reads (SAMPLES_PILON/)
-# There are two files per individual (LibX, LibX.1) from each sequencing run
+/external/data/Emily/Seal_RADseq/cebitec_2016/AFS/Mar_2016
+/external/data/Emily/Seal_RADseq/cebitec_2016/AFS/June_2016
+
+# in each of these are the same six directories for the six libraries:
+
+/AFS-RAD-Pool-1
+/AFS-RAD-Pool-2
+/AFS-RAD-Pool-3
+/AFS-RAD-Pool-4
+/AFS-RAD-Pool-5
+/AFS-RAD-Pool-6
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#                    SAMPLE PREPARATION                    #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+# For files in both Mar_2016 & June_2016, run the following:
+
+# (1) FASTX-TOOLKIT
+# First run fastqc to check read quality. If ends are bad, we can trim them
+# In each lib directory, run the following on the READ1s and the READ2s
+
+mkdir fastqc
+~/programs/FastQC/fastqc Read1_filename -out fastqc/
+~/programs/FastQC/fastqc Read2_filename -out fastqc/
+
+# (2) STACKS
+# process_radtags including trimming to 225 bp
+# libraries are split into 6 folders therefore we just need the within library barcodes. Barcodes file saved in /AFS/barcodes_single:
+ACACTGAC
+ACGTAGCA
+CACACAGT
+CAGTCTCA
+GTACTCGT
+GTCATGTG
+TGCATCGT
+TGTGACTG
+ACACGACA
+ACGTCTAC
+CAGTGTGT
+CATGATCA
+GTACGCTG
+GTCAGTGT
+TGTGTGAC
+TGTGCAGT
+
+# use default value for barcodes (--inline_null: barcode is inline with sequence, occurs only on single-end read, default)
+# each library is run separately; in each lib folder, for both March and June run:
+
+nohup process_radtags -1 AFS-RAD-Pool-1_ATCACG_L001_R1_001.fastq -2 AFS-RAD-Pool-1_ATCACG_L001_R2_001.fastq -o ./ -b ../../barcodes_single.txt -c -q -r -e sbfI -E phred33 -t 225 &
+nohup process_radtags -1 AFS-RAD-Pool-2_CGATGT_L001_R1_001.fastq -2 AFS-RAD-Pool-2_CGATGT_L001_R2_001.fastq -o ./ -b ../../barcodes_single.txt -c -q -r -e sbfI -E phred33 -t 225 &
+nohup process_radtags -1 AFS-RAD-Pool-3_GATCAG_L001_R1_001.fastq -2 AFS-RAD-Pool-3_GATCAG_L001_R2_001.fastq -o ./ -b ../../barcodes_single.txt -c -q -r -e sbfI -E phred33 -t 225 &
+nohup process_radtags -1 AFS-RAD-Pool-4_GGCTAC_L001_R1_001.fastq -2 AFS-RAD-Pool-4_GGCTAC_L001_R2_001.fastq -o ./ -b ../../barcodes_single.txt -c -q -r -e sbfI -E phred33 -t 225 &
+nohup process_radtags -1 AFS-RAD-Pool-5_TCGTTA_L001_R1_001.fastq -2 AFS-RAD-Pool-5_TCGTTA_L001_R2_001.fastq -o ./ -b ../../barcodes_single.txt -c -q -r -e sbfI -E phred33 -t 225 &
+nohup process_radtags -1 AFS-RAD-Pool-6_TACCGA_L001_R1_001.fastq -2 AFS-RAD-Pool-6_TACCGA_L001_R2_001.fastq -o ./ -b ../../barcodes_single.txt -c -q -r -e sbfI -E phred33 -t 225 &
+
+# save all the log files into one directory on my local computer, changing the filenames accordingly eg:
+
+/home/Dropbox/phd/projects/rad/rad_seals/log_files/June_2016:
+process_radtags_Mar_2016_1.log
+process_radtags_Mar_2016_2.log etc
+
+# can then run rad_tag_depth.R script to determine estimated sequencing coverage
+
+# (3) Rename every sample_ACGTAGCA.2.fq file. At the moment sample names are the same across the 6 libraries although correspond to different individuals
+# in each library folder, run for loop to change all names to contain the library name and sequencing run e.g. lib1 (March) and lib1.1 (June)
+# will merge all rounds of sequencing into the same directory later
+
+# Mar_2016 files:
+for f in sample*; do mv "$f" "${f/sample_/sample_lib1_}"; done
+for f in sample*; do mv "$f" "${f/sample_/sample_lib2_}"; done
+
+# ETC...
+
+# June_2016 files:
+for f in sample*; do mv "$f" "${f/sample_/sample_lib1.1_}"; done
+for f in sample*; do mv "$f" "${f/sample_/sample_lib2.1_}"; done
+
+# ETC...
+
+# (4) remove all *rem* files to one folder (in each directory)
+mkdir rem_folder
+mv folder/*rem* rem_folder
+
+#~~~~~
+# SAMPLES folder
+#~~~~~
+
+# (5) Put all individual files (i.e. read 1 and read 2 for each individual, such as: sample_lib6_ACACGACA.1.fq and sample_lib6_ACACGACA.2.fq) into one folder
+
+mkdir SAMPLES_PILON
+
+# Mar_2016
+cp March_2016/AFS-RAD-Pool-1/sample_lib1* SAMPLES_PILON/
+cp March_2016/AFS-RAD-Pool-2/sample_lib2* SAMPLES_PILON/
+cp March_2016/AFS-RAD-Pool-3/sample_lib3* SAMPLES_PILON/
+cp March_2016/AFS-RAD-Pool-4/sample_lib4* SAMPLES_PILON/
+cp March_2016/AFS-RAD-Pool-5/sample_lib5* SAMPLES_PILON/
+cp March_2016/AFS-RAD-Pool-6/sample_lib6* SAMPLES_PILON/
+
+# June_2016
+cp June_2016/AFS-RAD-Pool-1/sample_lib1.1_* SAMPLES_PILON/
+cp June_2016/AFS-RAD-Pool-2/sample_lib2.1_* SAMPLES_PILON/
+cp June_2016/AFS-RAD-Pool-3/sample_lib3.1_* SAMPLES_PILON/
+cp June_2016/AFS-RAD-Pool-4/sample_lib4.1_* SAMPLES_PILON/
+cp June_2016/AFS-RAD-Pool-5/sample_lib5.1_* SAMPLES_PILON/
+cp June_2016/AFS-RAD-Pool-6/sample_lib6.1_* SAMPLES_PILON/
+
+# count reads
+cd SAMPLES/
+wc -l *
+ 1810000 sample_lib1.1_ACACGACA.1.fq
+     1810000 sample_lib1.1_ACACGACA.2.fq
+     2236884 sample_lib1.1_ACACTGAC.1.fq
+     2236884 sample_lib1.1_ACACTGAC.2.fq
+
+
+# All individual raw reads are now in the /SAMPLES folder. There are two files per individual (LibX, LibX.1) from each sequencing run
+# I will map the different sequencing runs separately in order to assign the read groups correctly before merging the different runs within individuals
+# The read groups may not make a big difference to the genotyping but it is probably good practice to keep this information.
+
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 #                    BWA                    #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+
+# Working in directory with raw RAD sequencing reads (SAMPLES_PILON/)
+# There are two files per individual (LibX, LibX.1) from each sequencing run
+
 
 # make REFERENCE folder in top level Seal_RADseq directory
 
@@ -26,7 +152,7 @@ bwa index submission.assembly.ArcGaz001_AP3.GapClosed.ArcGaz.paired.PBJelly2.utg
 
 find ./ -name ‘*.fq’
 
-nohup find ./ -name '*.fq' | grep -v .2.fq | sed 's/.1.fq.fq//' | parallel bwa mem ../../../reference/submission.assembly.ArcGaz001_AP3.GapClosed.ArcGaz.paired.PBJelly2.utg000001c.utg.quiver.nopipe.pilon.fa {}.1.fq.fq {}.2.fq '>' '{}'.sam &
+nohup find ./ -name '*.fq' | grep -v .2.fq | sed 's/.1.fq//' | parallel bwa mem ../../../reference/submission.assembly.ArcGaz001_AP3.GapClosed.ArcGaz.paired.PBJelly2.utg000001c.utg.quiver.nopipe.pilon.fa {}.1.fq {}.2.fq '>' '{}'.sam &
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -295,7 +421,7 @@ nohup java -Djava.io.tmpdir=./Temp/ -Xmx64g -jar /usr/local/bin/GenomeAnalysisTK
 
 gzip -d ArcGaz_genotype_gvcf.vcf.gz
 
-# All SNP filtering in /home/emily/SNP_filtering directory in Rproject SNP_filtering.Rproj
+# All SNP filtering in /home/emily/rad_analysis_pilon_Dec2017 directory in Rproject rad_analysis_pilon_Dec2017.Rproj
 
 
 # END
