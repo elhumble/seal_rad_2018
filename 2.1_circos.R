@@ -27,7 +27,7 @@ seal <- fread("data/raw/PBJelly_v1.4_coords.txt",
   mutate(Contig = gsub("_quiver_pilon", "", Contig))
 
 #~~~~~~~~~~~~
-# Get genome chromsome / scaffold length stats
+# Get dog chromsome length stats
 
 seal_align <- read.table("data/raw/PBJelly_v1.4_lengths", header = F) %>%  
   mutate(V1 = gsub("_quiver_pilon", "", V1)) %>%

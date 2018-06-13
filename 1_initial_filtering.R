@@ -16,7 +16,7 @@ library(stringr)
 
 getwd()
 
-# Count number of SNPs in GATK output vcf file
+# Count number of SNPs in vcf file
 
 system("grep -v '#' /external/data/Emily/Seal_RADseq/cebitec_2016/AFS/SAMPLES_PILON/GATK/ArcGaz_pilon_genotype_gvcf.vcf | wc -l")
 
@@ -223,8 +223,5 @@ write.table(mendel_error_mod, "data/mendel/MendelErrorMod_SNPs_tab.txt", col.nam
 
 system("wc -l data/mendel/MendelErrorMod_SNPs.txt") # 617
 system("wc -l data/mendel/MendelErrorStrict_SNPs.txt") # 26202
-
-
-
 
 

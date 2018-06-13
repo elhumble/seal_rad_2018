@@ -137,7 +137,7 @@ rad_dk <- ggplot(rad_ks, aes(x=k, y = deltaK)) +
         axis.title.y = element_text(face = "plain")) +
   labs(x = "K", y = expression(paste(Delta,italic("K")))) +
   scale_x_continuous(breaks=c(1:6), labels=c(1:6),limits=c(1,6)) +
-  ggtitle('(D) 28,062 SNPs') + theme(plot.title=element_text(hjust=0, size = 16, face = "plain"))
+  ggtitle('(D) 27,592 SNPs') + theme(plot.title=element_text(hjust=0, size = 16, face = "plain"))
 
 rad_elpd <- ggplot(rad_ks, aes(x=k, y = elpdmean)) +
   geom_point(size = 1, col = "grey30") + # 1/1.5
@@ -149,7 +149,8 @@ rad_elpd <- ggplot(rad_ks, aes(x=k, y = elpdmean)) +
         axis.title.y = element_text(face = "plain")) +
   labs(x = "K", y = expression(paste("Ln Pr(",italic("X"),"|",italic("K"),")"))) +
   scale_x_continuous(breaks=c(1:6), labels=c(1:6),limits=c(1,6)) +
-  ggtitle('(B) 28,062 SNPs') + theme(plot.title=element_text(hjust=0, size = 16, face = "plain"))
+  ggtitle('(B) 27,592 SNPs') + theme(plot.title=element_text(hjust=0, size = 16, face = "plain"))
+
 
 
 #~~ Microsatellite Ks
@@ -188,8 +189,9 @@ dev.off()
 
 
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 3. Structure Plots               #
+# 5. Structure Plots               #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 #~~ Structure runs not merged:
@@ -264,8 +266,9 @@ make_structure_plots <- function(path_to_structure_out, path_to_struc_file){
 make_structure_plots("data/structure/results/run_files/", "data/structure/handmade_rad_sort.stru")
 make_structure_plots("data/structure/ms/results/run_files/", "data/structure/ms/stru_in.stru")
 
+
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-# 4. CLUMPP Structure Plots        #
+# 6. CLUMPP Structure Plots        #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 # Plot with merged files
@@ -317,12 +320,34 @@ make_structure_clumpp_plots("data/structure/ms/results/run_files/", "data/struct
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
-#  5. Membership Probabilites      #
+#  8. Membership Probabilites      #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 rad_k2_prob <- read.table("data/structure/results/run_files/pop-merged/pop_K2-combined-merged.txt") %>%
   mutate(top = ifelse(V2 > V3, V2, V3))
 nrow(filter(rad_k2_prob, top >= 0.99)) / 37
+
 ms_k2_prob <- read.table("data/structure/ms/results/run_files/pop-merged/pop_K2-combined-merged.txt")  %>%
   mutate(top = ifelse(V2 > V3, V2, V3))
 nrow(filter(ms_k2_prob, top >= 0.99)) / 37
+
+reb_k2_prob <- read.table("data/rebuttal/results/run_files/pop-merged/pop_K4-combined-merged.txt") %>%
+  mutate(top = ifelse(V2 > V3, V2, V3))
+nrow(filter(reb_k2_prob, top >= 0.99)) / 37
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#  9. DISTRUCT Plots               #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+cols <- c("#1B9E77", "#D95F02", "#E6AB02", "#7570B3", "#E7298A", "#66A61E") # colours wrong
+
+# select first run of K=2
+distructExport(slist[6], grplabbottom=pops$V2, useexe = T, indwidth=1.2, printcolorbrewer = T, fontsize = 3, xscale = 5, yscale = 3,
+               clustercol = cols)
+
+
+system(paste0("mkdir ", path_to_structure_out, "distruct_plots"))
+system(paste0("mv results_job** ", path_to_structure_out, "distruct_plots"))
+
+

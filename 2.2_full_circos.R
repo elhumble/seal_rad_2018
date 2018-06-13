@@ -1,5 +1,4 @@
 # Generate circos plot for full seal : dog genome alignment
-# Supplementary Figure
 # For LAST alignment, see: alignment_notes
 
 library(data.table)
@@ -219,13 +218,3 @@ dev.off()
 # blocks in seal
 
 # maffilter input.file=PBJelly_v1.4_CanFam3.1.maf input.file.compression=none output.log=PBJelly_v1.4_CanFam3.1.maffilter.merge.log maf.filter=“Merge(species=(CanFam), dist_max=10000),Output(file=merge.maf, compression=none)”
-
-# move these files 
-
-dog_merge <- fread("~/alignments/LAST/PBJelly_v1.4_CanFam3.1/maffilter/CanFam_merge_coords.txt",
-             col.names = c("Contig", "Start", "AlignLength", "Strand", "Length"))
-
-seal_merge <- fread("~/alignments/LAST/PBJelly_v1.4_CanFam3.1/maffilter/PBJelly_v1.4_merge_coords.txt", 
-              col.names = c("Contig", "Start", "AlignLength", "Strand", "Length"))
-
-

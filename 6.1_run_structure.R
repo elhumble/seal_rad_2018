@@ -1,5 +1,3 @@
-# Run this Rscript to run structure in parallel
-
 library(ParallelStructure)
 library(data.table)
 library(dplyr)
@@ -10,15 +8,14 @@ library(stringr)
 # 1. Run ParallelStructure                          #
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-# Usage: nohup Rscript 7_run_structure.R &
+# Usage: nohup Rscript 6.1_run_structure.R &
 
 options(scipen=999)
 
-# Structure files
+# Genotypes
 
 gen <- fread("data/structure/handmade_rad_sort.stru", header = F)
 #gen <- fread("data/structure/ms/stru_in.stru", header = F)
-
 
 #~~ Specify in and out files for structure
 

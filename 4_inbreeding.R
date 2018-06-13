@@ -1,5 +1,5 @@
 # Quantifying inbreeding
-# sMLH, IBCS
+# sMLH, IBCs
 
 library(dplyr)
 library(tidyr)
@@ -8,7 +8,6 @@ library(data.table)
 options(scipen=999)
 library(reshape2)
 library(inbreedR)
-#source("scripts/mkTrend.R")
 
 system("mkdir data/inbreeding")
 
@@ -31,7 +30,7 @@ system("vcftools --vcf data/ArcGaz_pilon_biallelic_sub_maf.recode.vcf --geno-dep
 
 depth <- fread("data/inbreeding/raw.gdepth", colClasses = "numeric") %>%
   unite(SNP, CHROM, POS)
-depth <- select(-SNP)
+depth <- select(depth, -SNP)
 
 depth <- depth %>%
   mutate(mean = rowMeans(.), 
@@ -59,7 +58,6 @@ system("vcftools --vcf data/ArcGaz_pilon_biallelic_sub_maf.recode.vcf --out data
 
 system("vcftools --vcf data/inbreeding/maf05_g60.recode.vcf --missing-indv --out data/inbreeding/maf05_g60")
 system("vcftools --vcf data/inbreeding/GQ_DP.recode.vcf --missing-indv --out data/inbreeding/GQ_DP")
-
 
 
 # make histogram
@@ -103,7 +101,6 @@ system("vcftools --vcf data/inbreeding/GQ_DP.recode.vcf --remove data/inbreeding
 
 #~~ Mendel errors
 
-system("vcftools --vcf data/inbreeding/maf05_g60_ldi.recode.vcf --exclude-positions data/mendel/MendelErrorStrict_SNPs_tab.txt --recode --recode-INFO-all --out data/inbreeding/maf05_g60_ldi_ME")
 system("vcftools --vcf data/inbreeding/GQ_DP_ldi.recode.vcf --exclude-positions data/mendel/MendelErrorStrict_SNPs_tab.txt --recode --recode-INFO-all --out data/inbreeding/GQ_DP_ldi_ME")
 
 
@@ -113,20 +110,13 @@ system("vcftools --vcf data/inbreeding/GQ_DP_ldi_ME.recode.vcf --keep data/raw/S
 system("bcftools query -l data/inbreeding/GQ_DP_ldi_ME_SSB.recode.vcf | wc -l ")
 
 
-system("vcftools --vcf data/inbreeding/maf05_g60_ldi_ME.recode.vcf --keep data/raw/SSB_IDs.txt --recode --recode-INFO-all --out data/inbreeding/maf05_g60_ldi_ME_SSB")
-system("bcftools query -l data/inbreeding/maf05_g60_ldi_ME_SSB.recode.vcf | wc -l ")
-
 
 #~~ Genotyping rate
 
-system("vcftools --vcf data/inbreeding/maf05_g60_ldi_ME_SSB.recode.vcf --max-missing 0.9 --maf 0.05 --recode --recode-INFO-all --out data/inbreeding/maf05_g90_ldi_ME_SSB")
-system("vcftools --vcf data/inbreeding/maf05_g90_ldi_ME_SSB.recode.vcf --plink --out data/inbreeding/maf05_g90_ldi_ME_SSB")
-system("plink --file data/inbreeding/maf05_g90_ldi_ME_SSB --make-bed --recodeAD --out data/inbreeding/maf05_g90_ldi_ME_SSB")
-
-# for this dataset, 70 % is necessary to keep a high number of SNPs
 system("vcftools --vcf data/inbreeding/GQ_DP_ldi_ME_SSB.recode.vcf --max-missing 0.7 --maf 0.05 --recode --recode-INFO-all --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB")
 system("bcftools query -l data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB.recode.vcf | wc -l ")
 
+# Convert to PLINK
 system("vcftools --vcf data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB.recode.vcf --plink --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB")
 system("wc -l data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB.map")
 system("plink --file data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB --recodeAD --make-bed --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB")
@@ -135,8 +125,6 @@ system("wc -l data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB.fam")
 
 #~~ HWE
 
-
-system("plink --file data/inbreeding/maf05_g90_ldi_ME_SSB --hwe 0.0001 --nonfounders --out data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --recode --make-bed --allow-extra-chr --debug")
 system("plink --file data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB --hwe 0.0001 --nonfounders --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --recode --make-bed --allow-extra-chr --debug")
 
 
@@ -147,39 +135,39 @@ system("plink --file data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB --hwe 0.0001 --non
 # lapply these functions
 
 # recode map file for LD pruning
-system("scripts/recode_full_map.sh data/inbreeding/maf05_g90_ldi_ME_SSB_hwe.map data/inbreeding/maf05_g90_ldi_ME_SSB_hwe.map")
 system("scripts/recode_full_map.sh data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.map data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.map")
-#system("scripts/recode_full_map.sh data/inbreeding/relatedness.map data/inbreeding/relatedness.map")
-
 
 # Make bed
-system("plink --file data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --make-bed --out data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --allow-extra-chr --debug")
 system("plink --file data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --make-bed --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --allow-extra-chr --debug")
-#system("plink --file data/inbreeding/relatedness --make-bed --out data/inbreeding/relatedness --allow-extra-chr --debug")
-
-# Run PLINK --indep
-system("plink --bfile data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --indep 50 5 2 --nonfounders --out data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --allow-extra-chr --debug")
-system("wc -l data/inbreeding/maf05_g90_ldi_ME_SSB_hwe.prune.in")
 
 # Run PLINK --indep
 system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --indep 50 5 2 --nonfounders --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --allow-extra-chr --debug")
 system("wc -l data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.prune.in")
 
-# Run PLINK --indep
-#system("plink --bfile data/inbreeding/relatedness --indep 50 5 2 --nonfounders --out data/inbreeding/relatedness --allow-extra-chr --debug")
-#system("wc -l data/inbreeding/relatedness.prune.in")
-
 # LD filter
-# Make plink raw file
-system("plink --bfile data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --extract data/inbreeding/maf05_g90_ldi_ME_SSB_hwe.prune.in --out data/inbreeding/maf05_g90_ldi_ME_SSB_hwe_LD --recodeAD --allow-extra-chr --debug")
-# Make standard plink files
-system("plink --bfile data/inbreeding/maf05_g90_ldi_ME_SSB_hwe --extract data/inbreeding/maf05_g90_ldi_ME_SSB_hwe.prune.in --out data/inbreeding/maf05_g90_ldi_ME_SSB_hwe_LD --make-bed --recode --allow-extra-chr --debug")
-
 
 # Make plink raw file
 system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --extract data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.prune.in --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD --recodeAD --allow-extra-chr --debug")
 # Make standard plink files
 system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe --extract data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe.prune.in --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD --make-bed --recode --allow-extra-chr --debug")
+
+
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+#         Individual missingness       #
+#~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
+
+system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD --missing --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD_missing --allow-extra-chr --debug")
+
+miss <- fread("data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD_missing.imiss")
+
+png("data/inbreeding/miss.png")
+hist(miss$F_MISS)
+dev.off()
+
+# filter for individuals with missing data
+
+system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD --mind 0.8 --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD_missing --recodeAD --allow-extra-chr --debug")
+system("plink --bfile data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD --mind 0.8 --out data/inbreeding/GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD_missing --make-bed --recode --allow-extra-chr --debug")
 
 
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
@@ -207,8 +195,8 @@ get_sMLH_from_plinkraw <- function(file) {
 
 
 raw_files <- paste("data/inbreeding/", list.files(path = "data/inbreeding", pattern="*.raw"), sep = "")
-sMLH <- lapply(raw_files[c(1,5)], get_sMLH_from_plinkraw)
-names(sMLH) <- lapply(raw_files[c(1,5)], function(x) gsub("data/inbreeding/|\\.raw", "", x))
+sMLH <- lapply(raw_files[2], get_sMLH_from_plinkraw)
+names(sMLH) <- lapply(raw_files[2], function(x) gsub("data/inbreeding/|\\.raw", "", x))
 
 sMLH <- rbindlist(sMLH, idcol = "Run") %>%
   dplyr::rename(IID = ANIMAL)
@@ -216,7 +204,7 @@ sMLH <- rbindlist(sMLH, idcol = "Run") %>%
 #~~ Load microsatellite data
 
 ms <- fread("data/raw/Rack61_microsatellites_Jul2017.csv", header = T) %>%
-  right_join(filter(sMLH, Run == "maf05_g90_ldi_ME_SSB_hwe_LD"), by = c("ID" = "IID"))
+  right_join(filter(sMLH, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), by = c("ID" = "IID"))
 IDs <- ms$ID
 rownames(ms) <- ms$ID
 
@@ -255,12 +243,10 @@ get_g2_from_plinkraw <- function(file) {
   
 }
 
-g2 <- lapply(raw_files[c(1,5)], get_g2_from_plinkraw)
-g2 <- lapply(raw_files[1], get_g2_from_plinkraw)
+g2 <- lapply(raw_files[2], get_g2_from_plinkraw)
 g2 <- g2[[1]]
 plot(g2, col = "grey")
 g2
-var(filter(sMLH, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH)
 g2$g2
 
 
@@ -298,19 +284,13 @@ load_fhats <- function(file) {
 
 
 ibc_files <- paste("data/inbreeding/", list.files(path = "data/inbreeding", pattern="*.ibc"), sep = "")
-fhats <- lapply(ibc_files[c(1,5)], load_fhats)
-names(fhats) <- lapply(ibc_files[c(1,4)], function(x) gsub("data/inbreeding/|\\.ibc", "", x))
+fhats <- lapply(ibc_files[2], load_fhats)
+names(fhats) <- lapply(ibc_files[2], function(x) gsub("data/inbreeding/|\\.ibc", "", x))
 
 ibcs <- rbindlist(fhats, idcol = "Run") %>%
   left_join(sMLH, by = c("IID", "Run")) %>%
-  left_join(ms_sMLH, by  = "IID")
+  left_join(ms_sMLH, by  = c("IID"))
 
-png("figs/ms_vs_rad.png")
-ggplot(ibcs, aes(x = ms_sMLH, y = sMLH)) + 
-  geom_point(colour = "grey45")
-dev.off()
-
-# ~~ Plot g2
 
 library(ggthemr)
 
@@ -319,12 +299,13 @@ ggthemr(palette = "pale", layout = "clean",
 swatch()
 to_swap <- swatch()[3:4]
 
-g2$g2 / var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH)
-g2$g2 / var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat1)
-g2$g2 / var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat2)
-g2$g2 / var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3)
 
-#View(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_LD"))
+# ~~ Plot g2
+
+g2$g2 / var(ibcs$sMLH, na.rm = T)
+g2$g2 / var(ibcs$Fhat1)
+g2$g2 / var(ibcs$Fhat2)
+g2$g2 / var(ibcs$Fhat3)
 
 
 g2_plot <- data.frame(g2$g2_boot)
@@ -333,10 +314,10 @@ ucl <- g2$CI_boot[2]
 g2_boot_summary <- data.frame(lcl, ucl)
 
 ibcs_vars_summary <- data.frame(c(g2$g2,
-                                  var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH),
-                                  var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat1),
-                                  var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat2),
-                                  var(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3)),
+                                  var(ibcs$sMLH, na.rm = T),
+                                  var(ibcs$Fhat1),
+                                  var(ibcs$Fhat2),
+                                  var(ibcs$Fhat3)),
                                 c("g2", "sMLH", "Fhat1", "Fhat2", "Fhat3"))
 
 colnames(ibcs_vars_summary) <- c("val", "var")
@@ -350,9 +331,9 @@ require(gridExtra)
 library(sitools)
 cbPalette <- c( "#1B9E77", "#66A61E", "#E6AB02", "black", "#7570B3", "#D95F02", "#E7298A")
 
-png("figs/g2_boot.png", units = "in", res = 300, width = 8, height = 7)
+png("data/inbreeding/g2_boot.png", units = "in", res = 300, width = 8, height = 7)
 
-g2_CI_plot <- 
+#g2_CI_plot <- 
   ggplot(g2_plot, aes(g2$g2_boot)) + 
   geom_histogram(colour = "grey45", fill = "grey45") +
   geom_errorbarh(aes(xmin = g2_boot_summary$lcl , xmax = g2_boot_summary$ucl , y = 90),
@@ -382,7 +363,7 @@ dev.off()
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#
 
 
-distribution <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, color=.id, fill=.id), col = "grey33") +
+distribution <- ggplot(filter(ibcs, Run.x == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, color=.id, fill=.id), col = "grey33") +
   geom_histogram(aes(y=..density..),  position="identity", alpha=0.9, col = "grey33", fill = "grey33") +
   geom_density(alpha=0.6, col = "grey33", fill = "grey33") + #3262AB
   labs(y = "Density", x = expression(italic(hat(F)["III"]))) +
@@ -410,7 +391,7 @@ g2_dist_panel <- grid.arrange(distribution, g2_CI_plot, ncol = 2, nrow = 1)
 
 png("figs/ibc_pup_adult.png", units = "in", res = 300, width = 11, height = 8)
 
-adult_pup_fhat3 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_LD"), aes(x=Fhat3, fill=Animal, color = Animal)) +
+adult_pup_fhat3 <- ggplot(filter(ibcs, Run.x == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, fill=Animal, color = Animal)) +
   #geom_histogram(aes(y=..density..),  position="identity", alpha=0.9, col = "#3262AB", fill = "#3262AB") +
   geom_density(alpha=0.8) +
   labs(y = "Density", x = expression(italic(hat(F)["III"]))) +
@@ -460,7 +441,6 @@ median(adults)
 #   Correlation plots     #
 #~~~~~~~~~~~~~~~~~~~~~~~~~#
 
-
 #lm_eqn = function(m) {
 #  eq <- substitute(italic(r)^2~"="~r2, 
 #                   list(r2 = format(summary(m)$r.squared, digits = 3)))
@@ -474,7 +454,7 @@ corr_eqn <- function(x,y, digits = 2) {
 
 
 #m1 <- lm(Fhat1 ~ Fhat3, filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"))
-labels1 = data.frame(x = -0.04, y = 0.34, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat1, 
+labels1 <- data.frame(x = -0.04, y = 0.34, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat1, 
                                                            filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3))
 
 plot7 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, y = Fhat1)) +
@@ -490,7 +470,7 @@ plot7 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fh
   ggtitle('(C)') + theme(plot.title=element_text(hjust=0, size = 18, face = "plain"))
 
 
-labels2 = data.frame(x = -0.04, y = 0.15, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat2, 
+labels2 <- data.frame(x = -0.04, y = 0.15, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat2, 
                                                            filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3))
 
 plot8 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, y = Fhat2)) +
@@ -505,8 +485,8 @@ plot8 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fh
 
 
 scaleFUN <- function(x) sprintf("%.1f", x)
-labels3 = data.frame(x = 0.12, y = 1.15, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH, 
-                                                         filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3))
+labels3 <- data.frame(x = 0.12, y = 1.15, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH, 
+                                                          filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3))
 plot9 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, y = sMLH)) +
   geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
   labs(x = expression(italic(hat(F)["III"])), y = "sMLH") +
@@ -519,40 +499,6 @@ plot9 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fh
             size = 5, fontface = "plain") +
   ggtitle('(E)') + theme(plot.title=element_text(hjust=0, size = 18, face = "plain")) +
   scale_y_continuous(labels=scaleFUN)
-
-labels4 = data.frame(x = 0.1, y = 0.29, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH, 
-                                                         filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat2))
-plot10 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat2, y = sMLH)) +
-  geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
-  labs(x = expression(italic(hat(F)["II"])), y = "sMLH") +
-  theme(axis.text.x=element_text(angle=45, hjust=1)) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain")) +
-  geom_text(data = labels4, aes(x = x, y = y, label = label), parse = TRUE,
-            size = 5, fontface = "plain")
-
-labels5 = data.frame(x = 0.285, y = 0.9, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$sMLH, 
-                                                          filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$ms_sMLH))
-plot11 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=sMLH, y = ms_sMLH)) +
-  geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
-  labs(x = "RAD sMLH", y = "Microsatellite sMLH") +
-  theme(axis.text.x=element_text(angle=45, hjust=1)) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain")) +
-  geom_text(data = labels5, aes(x = x, y = y, label = label), parse = TRUE,
-            size = 5, fontface = "plain")
-
-
-labels6 = data.frame(x = 0.3, y = 0.15, label = corr_eqn(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$Fhat3, 
-                                                         filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD")$ms_sMLH))
-plot12 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=ms_sMLH, y = Fhat3)) +
-  geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
-  labs(y = expression(italic(hat(F)["III"])), x = "Microsatellite sMLH") +
-  theme(axis.text.x=element_text(angle=45, hjust=1)) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain")) +
-  geom_text(data = labels6, aes(x = x, y = y, label = label), parse = TRUE,
-            size = 5, fontface = "plain")
 
 
 library(gridExtra)
@@ -577,60 +523,50 @@ jpeg("figs/inbreeding_fig.jpg", units = "in", res = 300, width = 14, height = 10
 grid.arrange(g2_dist_panel, corr_plots, nrow = 2)
 dev.off()
 
-#~~~~~~~~~~~~~~~~~~~~~~#
-#    NA bias plots     #
-#~~~~~~~~~~~~~~~~~~~~~~#
-library(sitools)
+#~~ ms RAD correlation
 
-# Plots for presentations and Supplementary
-# Presentation colour = #3262AB
-
-plot1 <- ggplot(filter(ibcs, Run == "maf05_g90_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, color=.id, fill=.id), col = "grey33") +
-  geom_histogram(aes(y=..density..),  position="identity", alpha=0.9, col = "grey33", fill = "grey33") +
-  geom_density(alpha=0.6, col = "grey33", fill = "grey33") +
-  labs(y = "Density", x = expression(italic(hat(F)["III"]))) +
-  xlim(c(-0.5,0.5)) +
+png("data/inbreeding/ms_vs_rad.png")
+ggplot(ibcs, aes(x = ms_sMLH, y = sMLH)) + 
+  geom_point(colour = "grey45") +
+  labs(y = "SNP sMLH", x = "Microsatellite sMLH" ) +
   theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain"))
-# axis.title = element_text(color = "black"))
+        axis.text.y = element_text(face = "plain"),
+        axis.title.x = element_text(face = "plain"),
+        axis.title.y = element_text(face = "plain"),
+        axis.ticks = element_blank()) 
+dev.off()
 
-plot2 <- ggplot(filter(ibcs, Run == "maf05_g90_ldi_ME_SSB_hwe_LD"), aes(factor(Animal), Fhat1)) + 
-  geom_violin(aes(fill = factor(Animal))) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain"))
+#~~ Heritability of heterozygosity
 
-plot3 <- ggplot(filter(ibcs, Run == "maf05_g90_ldi_ME_SSB_hwe_LD"), aes(x=NOMISS, y = Fhat3)) +
-  geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
-  labs(x = "SNPs Genotyped", y = expression(italic(hat(F)["III"]))) +
-  theme(axis.text.x=element_text(angle=45, hjust=1)) +
-  scale_x_continuous(labels = f2si) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain"))
+ped <- read.table("data/raw/new_pedigree.txt", header = T) %>%
+  na.omit()
+head(ped)
 
-# Depth filtered 
-library(scales)
+head(ibcs)
 
-plot4 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=Fhat3, color=.id, fill=.id), col = "grey33") +
-  geom_histogram(aes(y=..density..),  position="identity", alpha=0.9, col = "grey33", fill = "grey33") +
-  geom_density(alpha=0.6, col = "grey33", fill = "grey33") + #3262AB
-  labs(y = "Density", x = expression(italic(hat(F)["III"]))) +
-  #xlim(c(-0.5,0.5)) +
-  xlim(c(-0.3,0.3)) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain")) +
-  ggtitle('A') + theme(plot.title=element_text(hjust=0, size = 12))
+h2_ID <- left_join(ped, filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), by = c("ANIMAL" = "IID"))
+h2_MOTHER <- left_join(ped, filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), by = c("MOTHER" = "IID"))
+h2_FATHER <- left_join(ped, filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), by = c("FATHER" = "IID"))
+h2_midParent <- (h2_MOTHER$sMLH + h2_FATHER$sMLH) / 2
 
-plot5 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(factor(Animal), Fhat3)) + 
-  geom_violin(aes(fill = factor(Animal))) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain"))
+plot(h2_ID$sMLH ~ h2_MOTHER$sMLH) +
+  abline(lm(h2_ID$sMLH ~ h2_MOTHER$sMLH))
 
-plot6 <- ggplot(filter(ibcs, Run == "GQ_DP_maf05_G_ldi_ME_SSB_hwe_LD"), aes(x=NOMISS, y = Fhat3)) +
-  geom_point(size = 2, alpha = 1/1.5, col = "grey33") +
-  labs(x = "SNPs Genotyped", y = expression(italic(hat(F)["III"]))) +
-  theme(axis.text.x=element_text(angle=45, hjust=1)) +
-  scale_x_continuous(labels = f2si) +
-  theme(axis.text.x = element_text(face = "plain"),
-        axis.text.y = element_text(face = "plain"))
+summary(lm(h2_ID$sMLH ~ h2_MOTHER$sMLH))
 
+plot(h2_ID$sMLH ~ h2_FATHER$sMLH) +
+  abline(lm(h2_ID$sMLH ~ h2_FATHER$sMLH))
+
+summary(lm(h2_ID$sMLH ~ h2_FATHER$sMLH))
+
+
+plot(h2_ID$sMLH ~ h2_midParent) +
+  abline(lm(h2_ID$sMLH ~ h2_midParent))
+
+lm.het <-  lm(h2_ID$sMLH ~ h2_midParent)
+library(ggfortify)
+autoplot(lm.het)
+lm.het
+summary(lm.het)
+summary.lm.het <- summary(lm.het)$coefficients 
 
