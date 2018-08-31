@@ -4,7 +4,7 @@
 
 This repository contains the main code and data used in the manuscript.
 
-###### Pre-print available [here](https://doi.org/10.1101/269167)
+###### Manuscript available [here](http://www.g3journal.org/content/early/2018/06/28/g3.118.200171)
 
 `snp_discovery_pipeline_PILONGENOME_Nov2017.sh` : documented workflow for SNP discovery  
 `alignment_notes_Nov2017.sh` : documented  workflow for the genome alignment  
