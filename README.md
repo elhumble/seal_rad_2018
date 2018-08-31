@@ -15,7 +15,6 @@ This repository contains the main code and data used in the manuscript.
 `/data/processed` is necessary for storing any intermediate output files  
 `/scripts` contains some R and bash scripts necessary for the analysis
 
-![cover image](https://github.com/elhumble/seal_rad_2018/G3Cover_2018-09september.png)
 ![cover image](https://github.com/elhumble/seal_rad_2018/raw/master/G3Cover_2018-09september.png)
 Image: [John Dickens](https://www.instagram.com/johndickens.boz/)
 
